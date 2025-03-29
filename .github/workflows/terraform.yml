@@ -1,41 +1,31 @@
-name: Terraform CI/CD
+
+name: Terraform Deployment
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
-
+ 
 jobs:
-  terraform:
-    name: Terraform Plan & Apply
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Login to Azure
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.0 # Ensure you use a recent version
+
+
+      - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS_TEMP }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+      - name: Initialize Terraform
+        run: cd terraform && terraform init
 
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Plan
-        run: terraform plan -var="azure_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
-                             -var="azure_client_id=${{ secrets.AZURE_CLIENT_ID }}" \
-                             -var="azure_client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" \
-                             -var="azure_tenant_id=${{ secrets.AZURE_TENANT_ID }}"
-
-      - name: Terraform Apply (Manual Approval Required)
-        if: github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve -var="azure_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
-                                             -var="azure_client_id=${{ secrets.AZURE_CLIENT_ID }}" \
-                                             -var="azure_client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" \
-                                             -var="azure_tenant_id=${{ secrets.AZURE_TENANT_ID }}"
+      - name: Apply Terraform
+        run: cd terraform && terraform apply -auto-approve
