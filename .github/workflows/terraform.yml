@@ -1,4 +1,3 @@
-
 name: Terraform Deployment
 
 on:
@@ -18,14 +17,22 @@ jobs:
         with:
           terraform_version: 1.6.0 # Ensure you use a recent version
 
-
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS_TEMP }}
 
       - name: Initialize Terraform
-        run: cd terraform && terraform init
+        run: |
+          cd terraform
+          terraform init
 
-      - name: Apply Terraform
-        run: cd terraform && terraform apply -auto-approve
+      - name: Plan Terraform Changes
+        run: |
+          cd terraform
+          terraform plan -out=tfplan
+
+      - name: Apply Terraform Changes
+        run: |
+          cd terraform
+          terraform apply -auto-approve tfplan
